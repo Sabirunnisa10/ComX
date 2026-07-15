@@ -17,7 +17,17 @@ import {
   Compass,
   Building2,
   Workflow,
-  FileCode
+  FileCode,
+  Info,
+  X,
+  Code2,
+  Server,
+  Layout,
+  Zap,
+  Database,
+  Shield,
+  GitBranch,
+  Package
 } from 'lucide-react';
 import { SpecificationInput } from './cleancore/SpecificationInput';
 import { StandardDiscovery } from './cleancore/StandardDiscovery';
@@ -70,6 +80,7 @@ export default function SAPCleanCorePage() {
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState<string>('');
   const [chatLoading, setChatLoading] = useState<boolean>(false);
+  const [showTechInfo, setShowTechInfo] = useState<boolean>(false);
 
   // ── Analyze handler ──────────────────────────────────────────────────────
   const handleAnalyze = async (inputs: {
@@ -223,14 +234,229 @@ export default function SAPCleanCorePage() {
             S/4HANA Extensibility Architect
           </div>
         </div>
-        <div className="flex items-center space-x-4 text-xs">
+        <div className="flex items-center space-x-3 text-xs">
           <div className="flex items-center space-x-2">
             <span className="h-2 w-2 bg-green-400 rounded-full animate-pulse" />
             <span className="text-[11px]">Connected: BTP-ABAP-ENV</span>
           </div>
           <div className="bg-white/10 px-3 py-1 rounded-md border border-white/20 text-[11px] font-mono">System: P21/100</div>
+          {/* Tech Stack Info Button */}
+          <button
+            onClick={() => setShowTechInfo(true)}
+            className="flex items-center gap-1.5 px-3 py-1 bg-white/15 hover:bg-white/25 border border-white/30 rounded-md text-[11px] font-semibold transition cursor-pointer"
+            title="View Tech Stack"
+          >
+            <Info className="w-3.5 h-3.5" />
+            Tech Stack
+          </button>
         </div>
       </header>
+
+      {/* ── Tech Stack Modal ─────────────────────────────────────────── */}
+      {showTechInfo && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowTechInfo(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-[#0040B0] px-6 py-4 flex items-center justify-between rounded-t-2xl">
+              <div className="flex items-center gap-3">
+                <Code2 className="w-5 h-5 text-blue-200" />
+                <div>
+                  <h2 className="text-white font-bold text-base">Tech Stack — Page 2</h2>
+                  <p className="text-blue-200 text-[11px]">SAP Clean Core ABAP Suite — Full Software Reference</p>
+                </div>
+              </div>
+              <button onClick={() => setShowTechInfo(false)} className="text-white/70 hover:text-white transition cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+
+              {/* Frontend */}
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <Layout className="w-4 h-4 text-[#0040B0]" />
+                  <h3 className="text-sm font-bold text-[#32363A] uppercase tracking-wider">Frontend</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    { name: 'React 19', version: 'v19.0.1', desc: 'UI component framework — hooks, state, JSX rendering', color: '#61DAFB', bg: '#e0f7fe' },
+                    { name: 'TypeScript', version: '~5.8.2', desc: 'Strongly-typed JavaScript — interfaces, enums, generics', color: '#3178C6', bg: '#e8f0fb' },
+                    { name: 'Vite', version: 'v6.2.3', desc: 'Lightning-fast dev server & production bundler (ESM)', color: '#646CFF', bg: '#eeeefd' },
+                    { name: 'Tailwind CSS', version: 'v4.1.14', desc: 'Utility-first CSS framework — all layout & styling', color: '#06B6D4', bg: '#e0f9fb' },
+                    { name: 'Lucide React', version: 'v0.546.0', desc: 'SVG icon library — all icons across the UI', color: '#F97316', bg: '#fff3e8' },
+                    { name: 'Motion', version: 'v12.23.24', desc: 'Animation library for smooth UI transitions', color: '#EC4899', bg: '#fce8f3' },
+                  ].map(item => (
+                    <div key={item.name} className="flex items-start gap-3 p-3 rounded-lg border border-[#E5E7EB] bg-[#FAFAFB]">
+                      <div className="w-8 h-8 rounded-md flex items-center justify-center text-xs font-black shrink-0" style={{ background: item.bg, color: item.color }}>{item.name[0]}</div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-[#32363A]">{item.name}</span>
+                          <span className="text-[10px] font-mono text-[#6A6D70] bg-[#F0F0F0] px-1.5 py-0.5 rounded">{item.version}</span>
+                        </div>
+                        <p className="text-[11px] text-[#6A6D70] mt-0.5">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <hr className="border-[#E5E7EB]" />
+
+              {/* Backend */}
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <Server className="w-4 h-4 text-[#0040B0]" />
+                  <h3 className="text-sm font-bold text-[#32363A] uppercase tracking-wider">Backend</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    { name: 'Node.js', version: 'v24+', desc: 'JavaScript runtime — executes server.ts', color: '#3C873A', bg: '#e8f5e9' },
+                    { name: 'Express', version: 'v4.21.2', desc: 'HTTP server framework — REST API routing', color: '#333333', bg: '#F0F0F0' },
+                    { name: 'tsx', version: 'v4.21.0', desc: 'TypeScript executor — runs server.ts directly', color: '#3178C6', bg: '#e8f0fb' },
+                    { name: 'dotenv', version: 'v17.2.3', desc: 'Loads .env.local — GEMINI_API_KEY and config', color: '#ECD53F', bg: '#fffde7' },
+                    { name: 'ExcelJS', version: 'v4.4.0', desc: 'Reads/writes Excel workbooks for industry data', color: '#1D6F42', bg: '#e8f5e9' },
+                    { name: 'esbuild', version: 'v0.25.0', desc: 'Production build bundler for server.ts → .cjs', color: '#FFCF00', bg: '#fffde7' },
+                  ].map(item => (
+                    <div key={item.name} className="flex items-start gap-3 p-3 rounded-lg border border-[#E5E7EB] bg-[#FAFAFB]">
+                      <div className="w-8 h-8 rounded-md flex items-center justify-center text-xs font-black shrink-0" style={{ background: item.bg, color: item.color }}>{item.name[0]}</div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-[#32363A]">{item.name}</span>
+                          <span className="text-[10px] font-mono text-[#6A6D70] bg-[#F0F0F0] px-1.5 py-0.5 rounded">{item.version}</span>
+                        </div>
+                        <p className="text-[11px] text-[#6A6D70] mt-0.5">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <hr className="border-[#E5E7EB]" />
+
+              {/* AI / APIs */}
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <Zap className="w-4 h-4 text-[#0040B0]" />
+                  <h3 className="text-sm font-bold text-[#32363A] uppercase tracking-wider">AI & APIs</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    { name: 'Google Gemini', version: '3.5-flash', desc: 'Primary AI model — generates ABAP code, TSD, architecture blueprints, chat refinements', color: '#4285F4', bg: '#e8f0fb' },
+                    { name: 'Gemini Fallback', version: '2.0-flash', desc: 'Fallback model when primary is unavailable or rate-limited', color: '#34A853', bg: '#e8f5e9' },
+                    { name: '@google/genai', version: 'v2.4.0', desc: 'Official Google Generative AI SDK — API calls to Gemini', color: '#EA4335', bg: '#fce8e6' },
+                    { name: 'IBM WatsonX', version: 'granite-3-8b', desc: 'Tier-1 AI provider (when API key configured) — BOM mapping', color: '#1F70C1', bg: '#e8f0fb' },
+                  ].map(item => (
+                    <div key={item.name} className="flex items-start gap-3 p-3 rounded-lg border border-[#E5E7EB] bg-[#FAFAFB]">
+                      <div className="w-8 h-8 rounded-md flex items-center justify-center text-xs font-black shrink-0" style={{ background: item.bg, color: item.color }}>{item.name[0]}</div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-[#32363A]">{item.name}</span>
+                          <span className="text-[10px] font-mono text-[#6A6D70] bg-[#F0F0F0] px-1.5 py-0.5 rounded">{item.version}</span>
+                        </div>
+                        <p className="text-[11px] text-[#6A6D70] mt-0.5">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <hr className="border-[#E5E7EB]" />
+
+              {/* SAP Platform */}
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <Database className="w-4 h-4 text-[#0040B0]" />
+                  <h3 className="text-sm font-bold text-[#32363A] uppercase tracking-wider">SAP Platform & Standards</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    { name: 'SAP S/4HANA', version: '2023+', desc: 'Target ERP platform — Clean Core architecture and released APIs', color: '#0040B0', bg: '#e8f0fb' },
+                    { name: 'SAP BTP ABAP', version: 'Cloud', desc: 'ABAP Environment on BTP — upgrade-safe extensibility', color: '#0070F2', bg: '#e0f0ff' },
+                    { name: 'RAP Framework', version: 'ABAP 7.4+', desc: 'RESTful ABAP Programming Model — Business Objects, OData V4', color: '#009245', bg: '#e8f5e9' },
+                    { name: 'CDS Views', version: 'Core Data Svc', desc: 'Released I_* CDS views — standard SAP data access layer', color: '#F0AB00', bg: '#fffde7' },
+                    { name: 'ABAP OData V4', version: 'OData 4.0', desc: 'Service Binding — Fiori UI consumption via OData V4 protocol', color: '#E8000D', bg: '#fce8e6' },
+                    { name: 'ATC / Clean Core', version: 'Tier 1/2', desc: 'ABAP Test Cockpit compliance — upgrade-safe governance scoring', color: '#6E6E6E', bg: '#F0F0F0' },
+                  ].map(item => (
+                    <div key={item.name} className="flex items-start gap-3 p-3 rounded-lg border border-[#E5E7EB] bg-[#FAFAFB]">
+                      <div className="w-8 h-8 rounded-md flex items-center justify-center text-xs font-black shrink-0" style={{ background: item.bg, color: item.color }}>{item.name[0]}</div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-[#32363A]">{item.name}</span>
+                          <span className="text-[10px] font-mono text-[#6A6D70] bg-[#F0F0F0] px-1.5 py-0.5 rounded">{item.version}</span>
+                        </div>
+                        <p className="text-[11px] text-[#6A6D70] mt-0.5">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <hr className="border-[#E5E7EB]" />
+
+              {/* DevOps & Tooling */}
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <GitBranch className="w-4 h-4 text-[#0040B0]" />
+                  <h3 className="text-sm font-bold text-[#32363A] uppercase tracking-wider">DevOps & Tooling</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    { name: 'Git', version: 'v2+', desc: 'Version control — source history, branching, push to GitHub', color: '#F05032', bg: '#fce8e6' },
+                    { name: 'GitHub', version: 'Sabirunnisa10', desc: 'Remote repository — github.com/Sabirunnisa10/ComX', color: '#24292F', bg: '#F0F0F0' },
+                    { name: 'npm', version: 'v11+', desc: 'Package manager — installs all 264 dependencies', color: '#CB3837', bg: '#fce8e6' },
+                    { name: 'Windows Batch', version: 'start-comx.bat', desc: 'One-click launcher — auto npm install, opens browser', color: '#0078D4', bg: '#e0f0ff' },
+                  ].map(item => (
+                    <div key={item.name} className="flex items-start gap-3 p-3 rounded-lg border border-[#E5E7EB] bg-[#FAFAFB]">
+                      <div className="w-8 h-8 rounded-md flex items-center justify-center text-xs font-black shrink-0" style={{ background: item.bg, color: item.color }}>{item.name[0]}</div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-[#32363A]">{item.name}</span>
+                          <span className="text-[10px] font-mono text-[#6A6D70] bg-[#F0F0F0] px-1.5 py-0.5 rounded">{item.version}</span>
+                        </div>
+                        <p className="text-[11px] text-[#6A6D70] mt-0.5">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <hr className="border-[#E5E7EB]" />
+
+              {/* Architecture summary */}
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <Package className="w-4 h-4 text-[#0040B0]" />
+                  <h3 className="text-sm font-bold text-[#32363A] uppercase tracking-wider">Architecture Summary</h3>
+                </div>
+                <div className="bg-[#0040B0] text-white rounded-xl p-4 space-y-2 text-[11px] font-mono">
+                  <div className="flex justify-between border-b border-white/20 pb-2"><span className="text-blue-200">App Name</span><span>ComX v2</span></div>
+                  <div className="flex justify-between border-b border-white/20 pb-2"><span className="text-blue-200">Server</span><span>Express + Vite (SPA middleware)</span></div>
+                  <div className="flex justify-between border-b border-white/20 pb-2"><span className="text-blue-200">Port</span><span>http://localhost:3000</span></div>
+                  <div className="flex justify-between border-b border-white/20 pb-2"><span className="text-blue-200">Frontend Build</span><span>Vite 6 → React 19 SPA</span></div>
+                  <div className="flex justify-between border-b border-white/20 pb-2"><span className="text-blue-200">API Routes</span><span>/api/analyze · /api/chat · /api/improve · /api/simulate</span></div>
+                  <div className="flex justify-between border-b border-white/20 pb-2"><span className="text-blue-200">AI Pipeline</span><span>Gemini 3.5-flash → 2.0-flash fallback → Offline</span></div>
+                  <div className="flex justify-between border-b border-white/20 pb-2"><span className="text-blue-200">Language</span><span>TypeScript (strict, ESNext, JSX)</span></div>
+                  <div className="flex justify-between border-b border-white/20 pb-2"><span className="text-blue-200">Total Packages</span><span>264 npm packages</span></div>
+                  <div className="flex justify-between"><span className="text-blue-200">Source Lines</span><span>~3,900 lines (server.ts) + ~400 (SAPCleanCorePage)</span></div>
+                </div>
+              </section>
+
+              {/* Close button */}
+              <div className="flex justify-center pt-2">
+                <button
+                  onClick={() => setShowTechInfo(false)}
+                  className="px-8 py-2.5 bg-[#0040B0] hover:bg-[#0053CC] text-white text-xs font-bold rounded-lg transition cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Layout */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
