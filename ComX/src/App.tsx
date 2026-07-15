@@ -52,6 +52,9 @@ export default function App() {
   // Tech Stack modal
   const [showTechInfo, setShowTechInfo] = useState<boolean>(false);
 
+  // Install Guide modal
+  const [showInstall, setShowInstall] = useState<boolean>(false);
+
   // Active states
   const [activeTab, setActiveTab] = useState<"materials" | "excel_db" | "commodities" | "risks" | "strategy" | "backend_sheet" | "bp_eval" | "global_clients" | "proc_scenarios" | "scenario_map">("materials");
   const [materials, setMaterials] = useState<Material[]>([]);
@@ -1049,12 +1052,167 @@ export default function App() {
       )}
 
       {/* Footer credits and information */}
-      <footer className="border-t border-slate-200 bg-white px-6 py-8 text-center text-xs text-slate-500">
+      <footer className="border-t border-slate-200 bg-white px-6 py-6 text-center text-xs text-slate-500">
         <p>© 2026 ComX v2 — SAP Supply Chain Commodity Intelligence + Clean Core ABAP Suite. All rights reserved.</p>
         <p className="mt-1">
           Page 1: Material master analysis & hedge forecasting ({activeIndustryObj?.label ?? activeIndustry}) · Page 2: S/4HANA Clean Core ABAP Architect
         </p>
+        {/* Install Guide Button */}
+        <button
+          onClick={() => setShowInstall(true)}
+          className="mt-4 inline-flex items-center gap-2 px-5 py-2 bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold rounded-lg transition cursor-pointer shadow-sm"
+        >
+          <Package className="w-3.5 h-3.5" />
+          How to Install &amp; Run This App
+        </button>
       </footer>
+
+      {/* ── Install Guide Modal ───────────────────────────────────── */}
+      {showInstall && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowInstall(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+
+            {/* Header */}
+            <div className="sticky top-0 bg-indigo-700 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+              <div className="flex items-center gap-3">
+                <Package className="w-5 h-5 text-indigo-200" />
+                <div>
+                  <h2 className="text-white font-bold text-base">Installation Guide — ComX v2</h2>
+                  <p className="text-indigo-200 text-[11px]">Step-by-step setup from scratch to running app</p>
+                </div>
+              </div>
+              <button onClick={() => setShowInstall(false)} className="text-white/70 hover:text-white transition cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+
+              {/* Prerequisites */}
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <Shield className="w-4 h-4 text-indigo-600" />
+                  <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Prerequisites</h3>
+                </div>
+                <div className="space-y-2">
+                  {[
+                    { label: 'Node.js v18+', note: 'Download from nodejs.org — includes npm automatically', url: 'https://nodejs.org' },
+                    { label: 'Git', note: 'Download from git-scm.com for version control', url: 'https://git-scm.com' },
+                    { label: 'Gemini API Key', note: 'Get a free key from aistudio.google.com/app/apikey', url: 'https://aistudio.google.com/app/apikey' },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-start gap-3 p-3 rounded-lg border border-slate-200 bg-slate-50">
+                      <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-xs font-black flex items-center justify-center shrink-0 mt-0.5">{i + 1}</div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-800">{item.label}</span>
+                        <p className="text-[11px] text-slate-500 mt-0.5">{item.note}</p>
+                        <a href={item.url} target="_blank" rel="noreferrer" className="text-[10px] text-indigo-600 font-mono hover:underline">{item.url}</a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <hr className="border-slate-200" />
+
+              {/* Steps */}
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <GitBranch className="w-4 h-4 text-indigo-600" />
+                  <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Installation Steps</h3>
+                </div>
+                <ol className="space-y-3">
+                  {[
+                    {
+                      title: 'Clone the repository',
+                      cmd: 'git clone https://github.com/Sabirunnisa10/ComX.git',
+                      note: 'Downloads all source files into a ComX folder'
+                    },
+                    {
+                      title: 'Enter the project directory',
+                      cmd: 'cd ComX',
+                      note: 'All commands below must be run from inside this folder'
+                    },
+                    {
+                      title: 'Install all dependencies',
+                      cmd: 'npm install',
+                      note: 'Installs 264 packages — takes ~30 seconds on first run'
+                    },
+                    {
+                      title: 'Create the environment file',
+                      cmd: 'copy .env.example .env.local',
+                      note: 'Windows: use copy. Mac/Linux: use cp .env.example .env.local'
+                    },
+                    {
+                      title: 'Add your Gemini API key to .env.local',
+                      cmd: 'GEMINI_API_KEY=your_key_here',
+                      note: 'Open .env.local in any text editor and replace the placeholder with your real key'
+                    },
+                    {
+                      title: 'Start the development server',
+                      cmd: 'npm run dev',
+                      note: 'Starts Express + Vite on http://localhost:3000'
+                    },
+                    {
+                      title: 'Open the app in your browser',
+                      cmd: 'http://localhost:3000',
+                      note: 'Page 1 = Commodity Intelligence · Page 2 = SAP Clean Core ABAP Suite'
+                    },
+                  ].map((step, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <div className="w-7 h-7 rounded-full bg-indigo-700 text-white text-xs font-black flex items-center justify-center shrink-0 mt-0.5">{i + 1}</div>
+                      <div className="flex-1">
+                        <p className="text-xs font-bold text-slate-800 mb-1">{step.title}</p>
+                        <code className="block bg-slate-900 text-green-400 text-[11px] font-mono px-3 py-2 rounded-lg mb-1 select-all">{step.cmd}</code>
+                        <p className="text-[11px] text-slate-500">{step.note}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+
+              <hr className="border-slate-200" />
+
+              {/* One-click launcher */}
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <Zap className="w-4 h-4 text-indigo-600" />
+                  <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">One-Click Launch (Windows)</h3>
+                </div>
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2">
+                  <p className="text-xs text-slate-600">After completing setup above, you can use the included batch file to launch the app with a double-click:</p>
+                  <code className="block bg-slate-900 text-green-400 text-[11px] font-mono px-3 py-2 rounded-lg">start-comx.bat</code>
+                  <p className="text-[11px] text-slate-500">Located in the ComX folder root. Automatically checks for node_modules, runs npm install if missing, starts server, and opens browser.</p>
+                </div>
+              </section>
+
+              <hr className="border-slate-200" />
+
+              {/* Stop server */}
+              <section>
+                <div className="flex items-center gap-2 mb-2">
+                  <Server className="w-4 h-4 text-indigo-600" />
+                  <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Stopping the Server</h3>
+                </div>
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                  <p className="text-[11px] text-slate-600">In the terminal where the server is running, press:</p>
+                  <code className="block bg-slate-900 text-yellow-400 text-[11px] font-mono px-3 py-2 rounded-lg mt-2">Ctrl + C</code>
+                </div>
+              </section>
+
+              {/* Close */}
+              <div className="flex justify-center pt-2">
+                <button
+                  onClick={() => setShowInstall(false)}
+                  className="px-8 py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold rounded-lg transition cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
 
       </div>
       )} {/* end Page 1 */}
