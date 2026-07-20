@@ -44,46 +44,129 @@ export const AbapCodeViewer: React.FC<AbapCodeViewerProps> = ({ abapCode, onImpr
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Beautiful custom mini-highlighter for ABAP
-  const highlightAbap = (code: string) => {
-    if (!code) return '';
-    const lines = code.split('\n');
-    return lines.map((line, idx) => {
-      const isComment = line.trim().startsWith('*') || line.trim().startsWith('"');
-      if (isComment) {
-        return <div key={idx} className="text-slate-400 italic select-text">{line}</div>;
-      }
-      
-      // Inline highlights for keywords
-      const words = line.split(/(\s+|,|\.|\(|\))/);
-      const highlightedLine = words.map((word, wIdx) => {
-        const uppercaseWord = word.toUpperCase();
-        const keywords = [
-          'SELECT', 'FROM', 'INTO', 'TABLE', 'WHERE', 'AND', 'OR', 'JOIN', 'ON', 'UP', 'TO', 'ROWS',
-          'DATA', 'VALUE', 'NEW', 'REDUCE', 'FILTER', 'CORRESPONDING', 'LOOP', 'AT', 'ASSIGNING', 'FIELD-SYMBOL',
-          'ENDLOOP', 'IF', 'ELSE', 'ENDIF', 'CASE', 'WHEN', 'ENDCASE', 'CLASS', 'DEFINITION', 'IMPLEMENTATION',
-          'PUBLIC', 'PRIVATE', 'SECTION', 'METHODS', 'METHOD', 'ENDMETHOD', 'RAISE', 'EXCEPTION', 'CREATE', 'OBJECT'
-        ];
-        
-        if (keywords.includes(uppercaseWord)) {
-          return <span key={wIdx} className="text-[#C678DD] font-bold">{word}</span>;
-        }
-        if (word.startsWith('@')) {
-          return <span key={wIdx} className="text-[#D19A66]">{word}</span>; // Host variable
-        }
-        if (word.startsWith("'") || word.endsWith("'") || word.startsWith("|") || word.endsWith("|")) {
-          return <span key={wIdx} className="text-[#98C379]">{word}</span>; // Strings / templates
-        }
-        return <span key={wIdx}>{word}</span>;
-      });
+  // ── Full ABAP syntax tokenizer ────────────────────────────────────────────
+  // Token categories rendered with strict, distinct colors (One Dark Pro palette)
+  const highlightAbap = (code: string): React.ReactNode[] => {
+    if (!code) return [];
 
-      return (
-        <div key={idx} className="hover:bg-[#2C313C] px-2 flex select-text transition-colors duration-100">
-          <span className="w-10 text-slate-500 text-right pr-4 select-none font-sans text-[10px] self-center">{idx + 1}</span>
-          <span className="flex-1 whitespace-pre">{highlightedLine}</span>
-        </div>
-      );
-    });
+    // ── Token definitions — ordered: longest/most-specific first ─────────
+    const TOKEN_RULES: { type: string; re: RegExp }[] = [
+      // 1. Line comments  (* or ")
+      { type: 'comment',     re: /^(\*.*|".*)/                     },
+      // 2. Inline comment after statement
+      { type: 'inline-cmt',  re: /"[^']*$/                         },
+      // 3. String literal  '...' or `...`
+      { type: 'string',      re: /('(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)/  },
+      // 4. Template literal  |...|
+      { type: 'template',    re: /(\|[^|]*\|)/                     },
+      // 5. Number literal
+      { type: 'number',      re: /\b(\d+(?:\.\d+)?)\b/             },
+      // 6. Host / escape variable  @<symbol>
+      { type: 'host-var',    re: /(@\w+)/                          },
+      // 7. Field symbol  <...>
+      { type: 'field-sym',   re: /(<[\w-]+>)/                      },
+      // 8. Pragma / annotation  ##... or @
+      { type: 'pragma',      re: /(##\w+)/                         },
+      // 9. Type / built-in types
+      { type: 'type-name',   re: /\b(TYPE|TYPES|LIKE|STRUCTURE|TABLE|OF|REF|TO|STANDARD|SORTED|HASHED|INITIAL|SIZE|ABAP_BOOL|STRING|I|F|P|C|N|X|D|T|DECFLOAT16|DECFLOAT34|INT8)\b/i },
+      // 10. Statement-level keywords (control flow, OO, data)
+      { type: 'keyword',     re: /\b(SELECT|FROM|INTO|WHERE|AND|OR|NOT|ON|INNER|OUTER|LEFT|RIGHT|CROSS|JOIN|GROUP|BY|HAVING|ORDER|ASCENDING|DESCENDING|UNION|DISTINCT|FOR|ALL|ENTRIES|UP|ROWS|SINGLE|APPENDING|BYPASSING|BUFFER|CLIENT|SPECIFIED|USING|KEY|DATA|VALUE|NEW|REDUCE|FILTER|CORRESPONDING|BASE|LOOP|AT|ASSIGNING|FIELD-SYMBOL|ENDLOOP|IF|ELSE|ELSEIF|ENDIF|CASE|WHEN|ENDCASE|WHILE|ENDWHILE|DO|ENDDO|TRY|CATCH|FINALLY|ENDTRY|CLASS|DEFINITION|IMPLEMENTATION|ENDCLASS|INTERFACE|ENDINTERFACE|PUBLIC|PROTECTED|PRIVATE|FINAL|ABSTRACT|SECTION|METHODS|METHOD|ENDMETHOD|RAISING|EXCEPTIONS|CREATE|OBJECT|CALL|FUNCTION|INCLUDE|REPORT|PROGRAM|MODULE|ENDMODULE|FORM|ENDFORM|PERFORM|MOVE|APPEND|INSERT|MODIFY|DELETE|READ|WRITE|CLEAR|FREE|SORT|DESCRIBE|FIELD-GROUPS|OCCURS|ADD|SUBTRACT|MULTIPLY|DIVIDE|COMPUTE|ASSIGN|UNASSIGN|CHECK|EXIT|RETURN|CONTINUE|STOP|REJECT|CONCATENATE|SPLIT|TRANSLATE|CONDENSE|STRLEN|LINES|FIND|REPLACE|MATCH|SHIFT|OVERLAY|PACK|UNPACK|COLLECT|AUTHORITY-CHECK|MESSAGE|RAISE|RESUME|RESUME|SUSPEND|WAIT|COMMIT|ROLLBACK|WORK|OPEN|CLOSE|READ|WRITE|TRANSFER|GET|SET|AT|SELECTION-SCREEN|PARAMETERS|SELECT-OPTIONS|TABLES|NODES|EVENTS|INITIALIZATION|START-OF-SELECTION|END-OF-SELECTION|TOP-OF-PAGE|END-OF-PAGE|REPORT|PROCESS|BEFORE|OUTPUT|AFTER|INPUT|MODULE|CLASS-POOL|FUNCTION-POOL|INTERFACE-POOL|TYPE-POOL|DECIMAL|PLACES|LENGTH|DECIMALS)\b/i },
+      // 11. OO instance / class ref keywords
+      { type: 'oo-kw',       re: /\b(->|=>|::|~)\b/                },
+      // 12. Operator / punctuation tokens
+      { type: 'operator',    re: /([=<>!&+\-*/{}[\]().,;:])/       },
+      // 13. Identifier (everything else)
+      { type: 'ident',       re: /([A-Za-z_][\w-]*)/               },
+      // 14. Whitespace (preserved)
+      { type: 'ws',          re: /(\s+)/                            },
+    ];
+
+    // ── Color map ────────────────────────────────────────────────────────
+    // One Dark Pro extended for ABAP — each token class visually distinct
+    const COLOR: Record<string, string> = {
+      'comment':    '#5C6370',   // muted grey-green italic
+      'inline-cmt': '#5C6370',
+      'string':     '#98C379',   // green
+      'template':   '#56B6C2',   // cyan
+      'number':     '#D19A66',   // orange
+      'host-var':   '#E5C07B',   // gold  @variable
+      'field-sym':  '#61AFEF',   // sky blue  <FS_MAT>
+      'pragma':     '#BE5046',   // red-brown  ##NEEDED
+      'type-name':  '#E06C75',   // rose  TYPE / STRING / I / F
+      'keyword':    '#C678DD',   // purple  SELECT / IF / CLASS
+      'oo-kw':      '#ABB2BF',   // light grey  ->  =>
+      'operator':   '#ABB2BF',   // light grey  = ( ) , .
+      'ident':      '#ABB2BF',   // default text
+      'ws':         'inherit',
+    };
+
+    // ── Tokenise one line ────────────────────────────────────────────────
+    const tokeniseLine = (line: string): React.ReactNode[] => {
+      const nodes: React.ReactNode[] = [];
+      let rest = line;
+      let pos = 0;
+
+      // Full-line comment shortcut
+      const trimmed = line.trimStart();
+      if (trimmed.startsWith('*') || (trimmed.startsWith('"') && !trimmed.startsWith('"|'))) {
+        return [<span key={0} style={{ color: COLOR['comment'], fontStyle: 'italic' }}>{line}</span>];
+      }
+
+      while (rest.length > 0) {
+        let matched = false;
+        for (const rule of TOKEN_RULES) {
+          const m = rest.match(rule.re);
+          if (m && m.index === 0) {
+            const token = m[0];
+            const color = COLOR[rule.type] ?? 'inherit';
+            const isItalic = rule.type === 'comment' || rule.type === 'inline-cmt';
+            const isBold = rule.type === 'keyword' || rule.type === 'type-name';
+            nodes.push(
+              <span
+                key={pos}
+                style={{
+                  color,
+                  fontStyle: isItalic ? 'italic' : undefined,
+                  fontWeight: isBold ? '700' : undefined,
+                }}
+              >
+                {token}
+              </span>
+            );
+            rest = rest.slice(token.length);
+            pos += token.length;
+            matched = true;
+            break;
+          }
+        }
+        // Fallback: emit char verbatim
+        if (!matched) {
+          nodes.push(<span key={pos} style={{ color: COLOR['ident'] }}>{rest[0]}</span>);
+          rest = rest.slice(1);
+          pos++;
+        }
+      }
+      return nodes;
+    };
+
+    const lines = code.split('\n');
+    return lines.map((line, idx) => (
+      <div
+        key={idx}
+        className="hover:bg-[#2C313C] flex select-text transition-colors duration-75"
+        style={{ minHeight: '1.4em' }}
+      >
+        {/* Line number gutter */}
+        <span
+          className="select-none text-right pr-4 font-sans shrink-0"
+          style={{ color: '#4B5263', fontSize: '10px', width: '2.6rem', lineHeight: '1.6', paddingTop: '1px' }}
+        >
+          {idx + 1}
+        </span>
+        {/* Highlighted line */}
+        <span className="flex-1 whitespace-pre leading-relaxed">{tokeniseLine(line)}</span>
+      </div>
+    ));
   };
 
   return (
@@ -162,8 +245,8 @@ export const AbapCodeViewer: React.FC<AbapCodeViewerProps> = ({ abapCode, onImpr
                 <span className="text-xs font-bold text-red-700 flex items-center gap-1">
                   <AlertTriangle className="w-3.5 h-3.5" /> Original Generated Code
                 </span>
-                <div className="bg-[#1E222B] text-slate-400 border border-[#D1D9E0] rounded-xl p-3 font-mono text-[10px] max-h-[350px] overflow-y-auto overflow-x-auto whitespace-pre leading-relaxed shadow-inner">
-                  {abapCode.originalCode}
+                <div className="bg-[#1E222B] border border-[#3E4452] rounded-xl p-3 font-mono text-[10px] max-h-[350px] overflow-y-auto overflow-x-auto leading-relaxed shadow-inner">
+                  <div className="space-y-0">{highlightAbap(abapCode.originalCode ?? '')}</div>
                 </div>
               </div>
 
@@ -171,8 +254,8 @@ export const AbapCodeViewer: React.FC<AbapCodeViewerProps> = ({ abapCode, onImpr
                 <span className="text-xs font-bold text-emerald-700 flex items-center gap-1">
                   <ShieldCheck className="w-3.5 h-3.5" /> AI Optimized Clean Code
                 </span>
-                <div className="bg-[#1E222B] text-slate-200 border border-[#D1D9E0] rounded-xl p-3 font-mono text-[10px] max-h-[350px] overflow-y-auto overflow-x-auto whitespace-pre leading-relaxed shadow-inner">
-                  {abapCode.code}
+                <div className="bg-[#1E222B] border border-[#3E4452] rounded-xl p-3 font-mono text-[10px] max-h-[350px] overflow-y-auto overflow-x-auto leading-relaxed shadow-inner">
+                  <div className="space-y-0">{highlightAbap(abapCode.code)}</div>
                 </div>
               </div>
             </div>

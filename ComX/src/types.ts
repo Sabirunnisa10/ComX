@@ -206,3 +206,86 @@ export interface DashboardState {
     nickel: number;
   };
 }
+
+// -- SAPCleanCore types (Page 2) ----------------------------------------------
+// These are imported by src/components/cleancore/*.tsx via '../types'
+
+export type BusinessArea =
+  | 'P2P' | 'OTC' | 'R2R' | 'CPPM' | 'PS' | 'SUPPLY_CHAIN'
+  | 'WAREHOUSE' | 'MANUFACTURING' | 'PLANT_MAINTENANCE' | 'QUALITY_MGMT'
+  | 'FINANCE' | 'HCM' | 'SALES' | 'PURCHASING' | 'INVENTORY'
+  | 'TRANSPORTATION' | 'SERVICE_MGMT' | 'CUSTOM';
+
+export type DevelopmentObject =
+  | 'REPORT' | 'ENHANCEMENT' | 'BADI' | 'USER_EXIT' | 'ENHANCEMENT_SPOT'
+  | 'BAPI' | 'RFC' | 'FUNCTION_MODULE' | 'ODATA_SERVICE' | 'RAP_BO'
+  | 'CDS_VIEW' | 'AMDP' | 'CLASS' | 'INTERFACE' | 'ADOBE_FORM'
+  | 'SMARTFORM' | 'FIORI_APP' | 'BTP_EXTENSION' | 'API' | 'IDOC'
+  | 'BRF_PLUS' | 'VALIDATION_SUBSTITUTION' | 'MIGRATION_OBJECT'
+  | 'AUTO_DECIDE' | 'CUSTOM';
+
+export interface StandardObject {
+  id: string; name: string; type: string; description: string;
+  recommendationReason: string; cleanCoreScore: number;
+  upgradeSafety: 'Excellent' | 'Good' | 'Medium' | 'Low';
+  performanceRating: 'High' | 'Medium' | 'Low'; isSapRecommended: boolean;
+}
+
+export interface TechnicalSpecification {
+  overview: string; businessRequirement: string; solutionDesign: string;
+  architectureNotes: string;
+  objectList: Array<{ name: string; type: string; description: string }>;
+  programFlow: string; pseudocode: string; errorHandling: string;
+  authorizations: string; performanceNotes: string; securityReview: string;
+  deploymentSteps: string[]; rollbackPlan: string; transportStrategy: string;
+  testingStrategy: string;
+}
+
+export interface AbapCode {
+  code: string; originalCode?: string; cleanCoreScore: number;
+  atcComplianceChecklist: string[]; s4HanaReadinessNotes: string;
+  improvementsApplied: string[]; reviewFeedback?: string;
+}
+
+export interface ExtensibilityGuide {
+  spotName?: string; badiName?: string; implementationClass?: string;
+  filterValues?: string; interfaceName?: string;
+  methods?: Array<{ name: string; description: string }>;
+  sproPath?: string; steps: string[]; whyRequired: string;
+  interfaceCode?: string; implementationCode?: string;
+}
+
+export interface OdataRapGuide {
+  isRap: boolean; cdsRootView?: string; projectionView?: string;
+  behaviorDefinition?: string; behaviorImplementation?: string;
+  serviceDefinition?: string; serviceBinding?: string;
+  metadata?: string; entityName?: string; entitySetName?: string;
+  steps: string[]; cdsRootViewCode?: string; projectionViewCode?: string;
+  behaviorDefinitionCode?: string; behaviorImplementationCode?: string;
+  serviceDefinitionCode?: string; serviceBindingCode?: string;
+}
+
+export interface SandboxTestData { tableName: string; records: Array<Record<string, any>>; }
+
+export interface SandboxSimulation {
+  testData: SandboxTestData[]; executionSteps: string[];
+  expectedOutput: string; edgeCases: string[]; unitTests: string;
+  simulatedLogs: string[];
+  runtimeStats: { cpuTimeMs: number; dbReads: number; dbWrites: number; memoryKb: number; };
+}
+
+export interface CleanCoreAnalysisResult {
+  id: string; timestamp: string; businessArea: BusinessArea;
+  developmentObject: DevelopmentObject; requirementTitle: string;
+  manualRequirements: string; fileName?: string; module: string;
+  sapTransactions: string[]; impactedTables: string[];
+  standardObjects: StandardObject[]; techSpec: TechnicalSpecification;
+  abapCode: AbapCode; extensibilityGuide?: ExtensibilityGuide;
+  odataRapGuide?: OdataRapGuide; sandbox: SandboxSimulation;
+  visualDiagrams: { flowchartSvg: string; sequenceSvg: string; dataFlowSvg: string; };
+}
+
+export interface CleanCoreChatMessage {
+  id: string; role: 'user' | 'assistant'; content: string;
+  timestamp: string; isCodeImprovement?: boolean;
+}
