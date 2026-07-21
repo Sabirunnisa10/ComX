@@ -256,7 +256,8 @@ const AbapReviewPanel: React.FC = () => {
   const [fileName, setFileName] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ReviewResult | null>(null);
-  const [activeTab, setActiveTab] = useState<'report' | 'optimized' | 'documented' | 'changes' | 'atc' | 'diff'>('report');
+  const [activeTab, setActiveTab] = useState<'report' | 'optimized' | 'changes' | 'atc' | 'diff'>('report');
+  const [codeView, setCodeView] = useState<'optimized' | 'documented'>('optimized');
   const [error, setError] = useState<string>('');
   const [expandedFindings, setExpandedFindings] = useState<Set<string>>(new Set());
   const fileRef = useRef<HTMLInputElement>(null);
@@ -482,7 +483,6 @@ const AbapReviewPanel: React.FC = () => {
             {([
               { key: 'report',     icon: <BarChart3 className="w-3.5 h-3.5" />,      label: 'Analysis Report' },
               { key: 'optimized',  icon: <Zap className="w-3.5 h-3.5" />,            label: 'Optimized Code' },
-              { key: 'documented', icon: <BookOpen className="w-3.5 h-3.5" />,        label: 'Documented Code' },
               { key: 'changes',    icon: <Wrench className="w-3.5 h-3.5" />,          label: `Changes (${result.changes.length})` },
               { key: 'atc',        icon: <ShieldCheck className="w-3.5 h-3.5" />,     label: `ATC Findings (${result.atcFindings.length})` },
               { key: 'diff',       icon: <ArrowLeftRight className="w-3.5 h-3.5" />,  label: 'Side-by-Side Diff' },
@@ -549,31 +549,48 @@ const AbapReviewPanel: React.FC = () => {
               </div>
             )}
 
-            {/* OPTIMIZED CODE TAB */}
+            {/* OPTIMIZED / DOCUMENTED CODE TAB (combined) */}
             {activeTab === 'optimized' && (
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-[#32363A] flex items-center gap-2"><Zap className="w-4 h-4 text-[#C678DD]" />Optimized ABAP Code</h4>
-                  <button onClick={() => downloadText(result.optimizedCode, 'optimized_abap.abap')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-[#0040B0] border border-[#D1D9E0] rounded-lg hover:bg-blue-50 transition cursor-pointer">
+                {/* Sub-toggle + download */}
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  {/* Toggle pill */}
+                  <div className="flex bg-[#FAFAFB] border border-[#D1D9E0] rounded-lg p-0.5 gap-0.5">
+                    <button
+                      onClick={() => setCodeView('optimized')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition cursor-pointer ${
+                        codeView === 'optimized'
+                          ? 'bg-white text-[#0040B0] shadow-sm border border-[#D1D9E0]'
+                          : 'text-[#6A6D70] hover:text-[#32363A]'
+                      }`}
+                    >
+                      <Zap className="w-3.5 h-3.5" /> Optimized
+                    </button>
+                    <button
+                      onClick={() => setCodeView('documented')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition cursor-pointer ${
+                        codeView === 'documented'
+                          ? 'bg-white text-[#0040B0] shadow-sm border border-[#D1D9E0]'
+                          : 'text-[#6A6D70] hover:text-[#32363A]'
+                      }`}
+                    >
+                      <BookOpen className="w-3.5 h-3.5" /> With Comments
+                    </button>
+                  </div>
+                  {/* Download for active view */}
+                  <button
+                    onClick={() => codeView === 'optimized'
+                      ? downloadText(result.optimizedCode, 'optimized_abap.abap')
+                      : downloadText(result.documentedCode, 'documented_abap.abap')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-[#0040B0] border border-[#D1D9E0] rounded-lg hover:bg-blue-50 transition cursor-pointer"
+                  >
                     <Download className="w-3 h-3" />Download .abap
                   </button>
                 </div>
-                <HighlightedCode code={result.optimizedCode} maxH="600px" />
-              </div>
-            )}
-
-            {/* DOCUMENTED CODE TAB */}
-            {activeTab === 'documented' && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-[#32363A] flex items-center gap-2"><BookOpen className="w-4 h-4 text-[#56B6C2]" />Documented ABAP Code</h4>
-                  <button onClick={() => downloadText(result.documentedCode, 'documented_abap.abap')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-[#0040B0] border border-[#D1D9E0] rounded-lg hover:bg-blue-50 transition cursor-pointer">
-                    <Download className="w-3 h-3" />Download .abap
-                  </button>
-                </div>
-                <HighlightedCode code={result.documentedCode} maxH="600px" />
+                <HighlightedCode
+                  code={codeView === 'optimized' ? result.optimizedCode : result.documentedCode}
+                  maxH="600px"
+                />
               </div>
             )}
 
